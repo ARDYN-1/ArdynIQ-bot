@@ -1,12 +1,10 @@
-const API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
-const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${API_KEY}`;
+const API_KEY = import.meta.env.VITE_OPENAI_API_KEY;
+const API_URL = 'https://api.openai.com/v1/chat/completions';
 
-export interface GeminiResponse {
-  candidates: {
-    content: {
-      parts: {
-        text: string;
-      }[];
+export interface OpenAIResponse {
+  choices: {
+    message: {
+      content: string;
     };
   }[];
 }
@@ -18,23 +16,18 @@ export class GeminiApiService {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${API_KEY}`,
         },
         body: JSON.stringify({
-          contents: [
+          model: 'gpt-4o-mini',
+          messages: [
             {
-              parts: [
-                {
-                  text: prompt,
-                },
-              ],
+              role: 'user',
+              content: prompt,
             },
           ],
-          generationConfig: {
-            temperature: 0.7,
-            topK: 40,
-            topP: 0.95,
-            maxOutputTokens: 1024,
-          },
+          temperature: 0.7,
+          max_tokens: 1024,
         }),
       });
 
@@ -42,15 +35,15 @@ export class GeminiApiService {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
-      const data: GeminiResponse = await response.json();
-      
-      if (data.candidates && data.candidates.length > 0) {
-        return data.candidates[0].content.parts[0].text;
+      const data: OpenAIResponse = await response.json();
+
+      if (data.choices && data.choices.length > 0) {
+        return data.choices[0].message.content;
       }
-      
+
       throw new Error('No response generated');
     } catch (error) {
-      console.error('Gemini API Error:', error);
+      console.error('OpenAI API Error:', error);
       throw error instanceof Error ? error : new Error('Unknown error occurred');
     }
   }
